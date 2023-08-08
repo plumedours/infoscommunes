@@ -1,5 +1,5 @@
 export const purge = ['./index.html', './src/**/*.{js,jsx,ts,tsx,vue}'];
-export const darkMode = false;
+export const darkMode = "media";
 export const theme = {
   extend: {},
 };
