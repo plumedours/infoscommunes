@@ -6,7 +6,7 @@ import { ClipLoader } from 'react-spinners';
 import Footer from './Footer';
 
 function CarteComponent() {
-  const { communeName } = useParams();
+  const { communeCode } = useParams();
   const [polygonCoordinates, setPolygonCoordinates] = useState([]);
   const [centerCoordinates, setCenterCoordinates] = useState([0, 0]);
   const [surface, setSurface] = useState();
@@ -19,22 +19,31 @@ function CarteComponent() {
   const [departement, setDepartement] = useState();
   const [codeRegion, setCodeRegion] = useState();
   const [region, setRegion] = useState();
+  const [commune, setCommune] = useState();
 
   useEffect(() => {
     fetchPolygonCoordinates();
-    fetchData();
   }, []);
 
   const fetchPolygonCoordinates = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`https://geo.api.gouv.fr/communes?nom=${communeName}&fields=centre,surface,contour&format=json&geometry=centre`);
+      const response = await fetch(`https://geo.api.gouv.fr/communes/${communeCode}?fields=nom,code,codesPostaux,centre,surface,contour,codeDepartement,departement,codeRegion,region,population&format=json&geometry=centre`);
       const data = await response.json();
 
-      if (data.length > 0 && data[0].centre) {
-        setPolygonCoordinates(data[0].contour.coordinates[0].map(coords => [coords[1], coords[0]]));
-        setCenterCoordinates([data[0].centre.coordinates[1], data[0].centre.coordinates[0]]);
+      if (data.centre) {
+        setPolygonCoordinates(data.contour.coordinates[0].map(coords => [coords[1], coords[0]]));
+        setCenterCoordinates([data.centre.coordinates[1], data.centre.coordinates[0]]);
+        setCodeDepartement(data.codeDepartement);
+        setDepartement(data.departement.nom);
+        setCodeRegion(data.codeRegion);
+        setRegion(data.region.nom);
+        setSurface(data.surface);
+        setPostalCode(data.codesPostaux[0]);
+        setCodeInsee(data.code);
+        setPopulation(data.population);
         setDataLoaded(true);
+        setCommune(data.nom);
       }
     } catch (error) {
       console.error('Error fetching polygon coordinates:', error);
@@ -43,40 +52,14 @@ function CarteComponent() {
     }
   };
 
-  const fetchData = async () => {
-    try {
-      const response = await fetch(`https://geo.api.gouv.fr/communes?nom=${communeName}&fields=nom,code,codesPostaux,surface,codeDepartement,departement,codeRegion,region,population&format=json&geometry=centre`);
-      const data = await response.json();
-
-      if (data.length > 0) {
-        setPostalCode(data[0].codesPostaux);
-        setCodeInsee(data[0].code);
-        setPopulation(data[0].population);
-        setCodeDepartement(data[0].codeDepartement);
-        setDepartement(data[0].departement.nom);
-        setCodeRegion(data[0].codeRegion);
-        setRegion(data[0].region.nom);
-        setSurface(data[0].surface);
-      }
-    } catch (error) {
-      console.error('Error fetching polygon coordinates:', error);
-    }
-  };
-
   return (
     <div>
       <div className="flex flex-col min-h-screen">
         <div className="flex flex-col items-center pb-5 m-5">
-          <div className="flex flex-row w-11/12 md:w-9/12 lg:w-7/12 items-center">
-            <Link to="/">
-              <div className="flex text-neutral-700 hover:text-blue-500 bg-neutral-50 hover:bg-neutral-100 transition-colors rounded shadow-lg shadow-neutral-200">
-                <div className="flex items-end text-4xl">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="currentColor" d="m12.3 15.3l-2.6-2.6q-.15-.15-.225-.325T9.4 12q0-.2.075-.375T9.7 11.3l2.6-2.6q.475-.475 1.088-.212t.612.937v5.15q0 .675-.613.938T12.3 15.3Z"></path></svg>
-                </div>
-              </div>
-            </Link>
-            <div className="flex justify-center w-full bg-white mx-auto border-2 rounded-md shadow-lg">
-              <h2 className="my-2 text-xl md:text-2xl text-center">Carte de la commune : {communeName}</h2>
+          <div className="flex flex-col w-11/12 md:w-9/12 lg:w-7/12 items-center justify-center bg-white mx-auto border-2 rounded-md shadow-lg">
+            <div className="my-2 text-xl md:text-2xl text-center">
+              <h2>Carte de la commune :</h2>
+              <p>{commune}</p>
             </div>
           </div>
           {isLoading ? (
@@ -103,7 +86,7 @@ function CarteComponent() {
                 </div>
                 <div className="flex flex-col md:flex-row md:justify-evenly text-neutral-700 text-lg">
                   <div>
-                    <p className="text-neutral-700 font-semibold">Code postal :{" "} <span className="text-base font-medium">{postalCode.join(', ')}</span></p>
+                    <p className="text-neutral-700 font-semibold">Code postal :{" "} <span className="text-base font-medium">{postalCode}</span></p>
                     <p className="text-neutral-700 font-semibold">Département : <span className="text-base font-medium">{departement} ({codeDepartement})</span></p>
                     <p className="text-neutral-700 font-semibold">Région : <span className="text-base font-medium">{region} ({codeRegion})</span></p>
                   </div>
